@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 // Definition for a binary tree node.
 #[derive(Debug, PartialEq, Eq)]
 pub struct TreeNode {
@@ -7,7 +10,7 @@ pub struct TreeNode {
 }
 
 impl TreeNode {
-    pub fn new(val: i32) -> Self {
+    fn new(val: i32) -> Self {
         TreeNode {
             val,
             left: None,
@@ -16,10 +19,46 @@ impl TreeNode {
     }
 }
 
-use std::cell::RefCell;
-use std::rc::Rc;
+fn build_tree(data: &[Option<i32>]) -> Option<Rc<RefCell<TreeNode>>> {
+    if data.is_empty() {
+        return None;
+    }
 
-pub fn merge_trees(
+    match data[0] {
+        None => None,
+        Some(val) => {
+            let head = Rc::new(RefCell::new(TreeNode::new(val)));
+            let mut stack = vec![(head.clone(), 0)];
+            loop {
+                match stack.pop() {
+                    None => break,
+                    Some((current, index)) => {
+                        let mut cur = current.borrow_mut();
+                        let left_ind = index * 2 + 1;
+                        if left_ind < data.len() {
+                            if let Some(val) = data[left_ind] {
+                                let left = Rc::new(RefCell::new(TreeNode::new(val)));
+                                cur.left = Some(left.clone());
+                                stack.push((left, left_ind));
+                            }
+                        }
+                        let right_ind = index * 2 + 2;
+                        if right_ind < data.len() {
+                            if let Some(val) = data[right_ind] {
+                                let right = Rc::new(RefCell::new(TreeNode::new(val)));
+                                cur.right = Some(right.clone());
+                                stack.push((right, right_ind));
+                            }
+                        }
+                    }
+                }
+            }
+            Some(head)
+        }
+    }
+}
+
+fn merge_trees(
     t1: Option<Rc<RefCell<TreeNode>>>,
     t2: Option<Rc<RefCell<TreeNode>>>,
 ) -> Option<Rc<RefCell<TreeNode>>> {
@@ -61,4 +100,9 @@ pub fn merge_trees(
     }
 }
 
-fn main() {}
+fn main() {
+    let t0 = build_tree(&[Some(1), Some(2), Some(3)]);
+    let t1 = build_tree(&[Some(1), None, Some(3)]);
+    let t2 = merge_trees(t0, t1);
+    println!("{:#?}", t2);
+}
